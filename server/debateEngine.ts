@@ -1,7 +1,8 @@
 import { nanoid } from "nanoid";
-import { invokeLLM } from "./_core/llm";
 import { Agent, Message } from "../drizzle/schema";
 import { createMessage, getSessionMessages, updateDebateSession } from "./db";
+import { AIProviderService, AIProviderConfig } from "./aiProviders";
+import { getActiveAIProvider } from "./aiProviderDb";
 
 export type AgentStatus = "idle" | "thinking" | "speaking" | "waiting";
 
@@ -26,7 +27,8 @@ export interface AgentMessage {
 export async function generateAgentResponse(
   agent: Agent,
   context: DebateContext,
-  previousMessages: Message[]
+  previousMessages: Message[],
+  userId: number
 ): Promise<string> {
   // Build conversation history
   const history = previousMessages
@@ -53,15 +55,25 @@ ${previousMessages.length === 0
   : "Respond to the previous arguments, state your position, and provide your analysis in 100-150 words."}`;
 
   try {
-    const response = await invokeLLM({
-      messages: [
+    // Get user's active AI provider config
+    const providerConfig = await getActiveAIProvider(userId);
+    
+    const aiConfig: AIProviderConfig = {
+      provider: providerConfig?.provider || "manus",
+      apiKey: providerConfig?.apiKey || undefined,
+      baseURL: providerConfig?.baseURL || undefined,
+      model: providerConfig?.model || undefined,
+    };
+
+    const response = await AIProviderService.chat(
+      [
         { role: "system", content: agent.systemPrompt },
         { role: "user", content: prompt },
       ],
-    });
+      aiConfig
+    );
 
-    const content = response.choices[0]?.message?.content;
-    return typeof content === 'string' ? content : "I have no response at this time.";
+    return response.content || "I have no response at this time.";
   } catch (error) {
     console.error(`[DebateEngine] Error generating response for ${agent.name}:`, error);
     throw error;
@@ -74,6 +86,7 @@ ${previousMessages.length === 0
 export async function executeDebateRound(
   sessionId: string,
   context: DebateContext,
+  userId: number,
   onAgentStatusChange?: (agentId: string, status: AgentStatus) => void,
   onMessageCreated?: (message: Message) => void
 ): Promise<Message[]> {
@@ -86,7 +99,7 @@ export async function executeDebateRound(
       onAgentStatusChange?.(agent.id, "thinking");
 
       // Generate response
-      const content = await generateAgentResponse(agent, context, previousMessages);
+      const content = await generateAgentResponse(agent, context, previousMessages, userId);
 
       // Update agent status to speaking
       onAgentStatusChange?.(agent.id, "speaking");
@@ -128,7 +141,8 @@ export async function executeDebateRound(
 export async function generateDebateSummary(
   topic: string,
   agents: Agent[],
-  messages: Message[]
+  messages: Message[],
+  userId: number
 ): Promise<{
   summary: string;
   keyPoints: string[];
@@ -163,36 +177,29 @@ Provide a JSON response with the following structure:
 }`;
 
   try {
-    const response = await invokeLLM({
-      messages: [
+    // Get user's active AI provider config
+    const providerConfig = await getActiveAIProvider(userId);
+    
+    const aiConfig: AIProviderConfig = {
+      provider: providerConfig?.provider || "manus",
+      apiKey: providerConfig?.apiKey || undefined,
+      baseURL: providerConfig?.baseURL || undefined,
+      model: providerConfig?.model || undefined,
+    };
+
+    const response = await AIProviderService.chat(
+      [
         {
           role: "system",
           content: "You are an expert debate analyst. Provide objective, balanced analysis.",
         },
         { role: "user", content: prompt },
       ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "debate_summary",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              summary: { type: "string" },
-              keyPoints: { type: "array", items: { type: "string" } },
-              consensus: { type: "array", items: { type: "string" } },
-              disagreements: { type: "array", items: { type: "string" } },
-            },
-            required: ["summary", "keyPoints", "consensus", "disagreements"],
-            additionalProperties: false,
-          },
-        },
-      },
-    });
+      aiConfig
+    );
 
-    const content = response.choices[0]?.message?.content;
-    if (!content || typeof content !== 'string') {
+    const content = response.content;
+    if (!content) {
       throw new Error("No response from LLM");
     }
 
@@ -214,6 +221,7 @@ Provide a JSON response with the following structure:
 export async function runDebateSession(
   sessionId: string,
   context: DebateContext,
+  userId: number,
   onAgentStatusChange?: (agentId: string, status: AgentStatus) => void,
   onMessageCreated?: (message: Message) => void,
   onRoundComplete?: (round: number) => void
@@ -227,14 +235,14 @@ export async function runDebateSession(
       context.currentRound = round;
       await updateDebateSession(sessionId, { currentRound: round });
 
-      await executeDebateRound(sessionId, context, onAgentStatusChange, onMessageCreated);
+      await executeDebateRound(sessionId, context, userId, onAgentStatusChange, onMessageCreated);
 
       onRoundComplete?.(round);
     }
 
     // Generate summary
     const allMessages = await getSessionMessages(sessionId);
-    const summary = await generateDebateSummary(context.topic, context.agents, allMessages);
+    const summary = await generateDebateSummary(context.topic, context.agents, allMessages, userId);
 
     // Update session with summary and mark as completed
     await updateDebateSession(sessionId, {

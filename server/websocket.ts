@@ -52,6 +52,7 @@ export function setupWebSocket(httpServer: HTTPServer) {
             maxRounds: session.maxRounds,
             messages: [],
           },
+          session.userId, // userId
           // onAgentStatusChange
           (agentId: string, status: AgentStatus) => {
             io.to(`debate-${sessionId}`).emit("agent-status", {

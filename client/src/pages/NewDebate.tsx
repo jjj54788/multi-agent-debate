@@ -120,7 +120,6 @@ export default function NewDebate() {
                       <Checkbox
                         id={agent.id}
                         checked={selectedAgents.includes(agent.id)}
-                        onCheckedChange={() => handleAgentToggle(agent.id)}
                       />
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">

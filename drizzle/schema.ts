@@ -76,3 +76,6 @@ export const messages = mysqlTable("messages", {
 
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = typeof messages.$inferInsert;
+
+// Export AI Provider Config
+export * from "./aiProviderSchema";

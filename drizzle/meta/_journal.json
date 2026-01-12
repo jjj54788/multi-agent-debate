@@ -15,6 +15,13 @@
       "when": 1768257302437,
       "tag": "0001_groovy_komodo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1768260024306,
+      "tag": "0002_flowery_tattoo",
+      "breakpoints": true
     }
   ]
 }

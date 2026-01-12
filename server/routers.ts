@@ -11,6 +11,14 @@ import {
   getUserDebateSessions,
   getSessionMessages,
 } from "./db";
+import {
+  getUserAIProviders,
+  getActiveAIProvider,
+  createAIProviderConfig,
+  updateAIProviderConfig,
+  deleteAIProviderConfig,
+  setActiveProvider,
+} from "./aiProviderDb";
 
 export const appRouter = router({
   system: systemRouter,
@@ -29,6 +37,67 @@ export const appRouter = router({
     list: publicProcedure.query(async () => {
       return await getAllAgents();
     }),
+  }),
+
+  aiProvider: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await getUserAIProviders(ctx.user.id);
+    }),
+
+    getActive: protectedProcedure.query(async ({ ctx }) => {
+      return await getActiveAIProvider(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          provider: z.enum(["manus", "openai", "anthropic", "custom"]),
+          name: z.string().min(1),
+          apiKey: z.string().optional(),
+          baseURL: z.string().optional(),
+          model: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        return await createAIProviderConfig({
+          userId: ctx.user.id,
+          provider: input.provider,
+          name: input.name,
+          apiKey: input.apiKey,
+          baseURL: input.baseURL,
+          model: input.model,
+        });
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().optional(),
+          apiKey: z.string().optional(),
+          baseURL: z.string().optional(),
+          model: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...updates } = input;
+        await updateAIProviderConfig(id, ctx.user.id, updates);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await deleteAIProviderConfig(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    setActive: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await setActiveProvider(input.id, ctx.user.id);
+        return { success: true };
+      }),
   }),
 
   debate: router({

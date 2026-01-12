@@ -67,6 +67,13 @@ export default function Home() {
                 查看历史讨论
               </Button>
             </Link>
+            {isAuthenticated && (
+              <Link href="/settings/ai-providers">
+                <Button size="lg" variant="outline">
+                  AI 设置
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </section>

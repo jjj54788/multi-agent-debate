@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import AIProviderSettings from "./pages/AIProviderSettings";
 import NewDebate from "./pages/NewDebate";
 import DebateRoom from "./pages/DebateRoom";
 import DebateList from "./pages/DebateList";
@@ -12,10 +13,11 @@ import DebateList from "./pages/DebateList";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/debates" component={DebateList} />
+      <Route path={"/"} component={Home} />
+      <Route path={"/settings/ai-providers"} component={AIProviderSettings} />
       <Route path="/debates/new" component={NewDebate} />
       <Route path="/debates/:sessionId" component={DebateRoom} />
+      <Route path="/debates" component={DebateList} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
