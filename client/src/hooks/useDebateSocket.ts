@@ -40,7 +40,13 @@ export interface DebateSession {
   maxRounds: number;
   currentRound: number;
   status: "pending" | "running" | "paused" | "completed" | "error";
-  summary: DebateSummary | null;
+  summary: string | null;
+  keyPoints: string[] | null;
+  consensus: string | null;
+  disagreements: string[] | null;
+  bestViewpoint: string | null;
+  mostInnovative: string | null;
+  goldenQuotes: string[] | null;
   createdAt: Date;
   updatedAt: Date;
   completedAt: Date | null;
@@ -103,6 +109,11 @@ export function useDebateSocket(sessionId: string | null) {
         ...prev,
         [data.agentId]: data.status,
       }));
+    });
+
+    newSocket.on("historical-messages", (historicalMessages: Message[]) => {
+      console.log("[WebSocket] Received historical messages:", historicalMessages.length);
+      setMessages(historicalMessages);
     });
 
     newSocket.on("new-message", (message: Message) => {

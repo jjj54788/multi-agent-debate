@@ -1,0 +1,100 @@
+{
+  "query": "SELECT id, sender, round, logicScore, innovationScore, expressionScore, totalScore FROM messages ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2EWZNYNSuTKGjiZ.root --database DmM4Thn8jeAVUsEhuTH7VK --execute SELECT id, sender, round, logicScore, innovationScore, expressionScore, totalScore FROM messages ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "fM4K9R3WA2cGWRSCN1PtQ",
+      "sender": "supporter",
+      "round": "5",
+      "logicScore": "7",
+      "innovationScore": "7",
+      "expressionScore": "8",
+      "totalScore": "22"
+    },
+    {
+      "id": "QV-h-mLkOeCaX2MZ3QDhu",
+      "sender": "opponent",
+      "round": "5",
+      "logicScore": "8",
+      "innovationScore": "5",
+      "expressionScore": "8",
+      "totalScore": "21"
+    },
+    {
+      "id": "SUwAkMHRnCwQRCcz5Vsoz",
+      "sender": "supporter",
+      "round": "4",
+      "logicScore": "7",
+      "innovationScore": "7",
+      "expressionScore": "8",
+      "totalScore": "22"
+    },
+    {
+      "id": "5WmEYX_PJPQb7wH-NqU0v",
+      "sender": "opponent",
+      "round": "4",
+      "logicScore": "8",
+      "innovationScore": "6",
+      "expressionScore": "8",
+      "totalScore": "22"
+    },
+    {
+      "id": "iJTRa0ZWx7DCakZNLVl5p",
+      "sender": "supporter",
+      "round": "3",
+      "logicScore": "8",
+      "innovationScore": "7",
+      "expressionScore": "8",
+      "totalScore": "23"
+    },
+    {
+      "id": "Pey_hpD9W2oSPI9BlGNtg",
+      "sender": "opponent",
+      "round": "3",
+      "logicScore": "8",
+      "innovationScore": "6",
+      "expressionScore": "9",
+      "totalScore": "23"
+    },
+    {
+      "id": "us6UEyl9eHY0PfNfw0AzB",
+      "sender": "supporter",
+      "round": "2",
+      "logicScore": "8",
+      "innovationScore": "7",
+      "expressionScore": "8",
+      "totalScore": "23"
+    },
+    {
+      "id": "7_QO0FeYE0WuTN9fKqtBA",
+      "sender": "opponent",
+      "round": "2",
+      "logicScore": "8",
+      "innovationScore": "4",
+      "expressionScore": "8",
+      "totalScore": "20"
+    },
+    {
+      "id": "1SyXYvlHjsxZaCuZn6lQy",
+      "sender": "supporter",
+      "round": "1",
+      "logicScore": "8",
+      "innovationScore": "6",
+      "expressionScore": "8",
+      "totalScore": "22"
+    },
+    {
+      "id": "KaG0_AfpuqWF9CnwMBGIq",
+      "sender": "opponent",
+      "round": "1",
+      "logicScore": "8",
+      "innovationScore": "4",
+      "expressionScore": "8",
+      "totalScore": "20"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsender\tround\tlogicScore\tinnovationScore\texpressionScore\ttotalScore\nfM4K9R3WA2cGWRSCN1PtQ\tsupporter\t5\t7\t7\t8\t22\nQV-h-mLkOeCaX2MZ3QDhu\topponent\t5\t8\t5\t8\t21\nSUwAkMHRnCwQRCcz5Vsoz\tsupporter\t4\t7\t7\t8\t22\n5WmEYX_PJPQb7wH-NqU0v\topponent\t4\t8\t6\t8\t22\niJTRa0ZWx7DCakZNLVl5p\tsupporter\t3\t8\t7\t8\t23\nPey_hpD9W2oSPI9BlGNtg\topponent\t3\t8\t6\t9\t23\nus6UEyl9eHY0PfNfw0AzB\tsupporter\t2\t8\t7\t8\t23\n7_QO0FeYE0WuTN9fKqtBA\topponent\t2\t8\t4\t8\t20\n1SyXYvlHjsxZaCuZn6lQy\tsupporter\t1\t8\t6\t8\t22\nKaG0_AfpuqWF9CnwMBGIq\topponent\t1\t8\t4\t8\t20\n",
+  "stderr": "",
+  "execution_time_ms": 232
+}

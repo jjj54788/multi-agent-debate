@@ -28,14 +28,21 @@ export async function scoreMessage(
   totalScore: number;
   scoringReasons: { logic: string; innovation: string; expression: string };
 }> {
+  console.log(`[ScoringEngine] Starting to score message ${message.id}`);
   try {
     // Get scorer agents
+    console.log(`[ScoringEngine] Fetching scorer agents...`);
     const logicScorer = await getAgentById(SCORER_IDS.LOGIC);
     const innovationScorer = await getAgentById(SCORER_IDS.INNOVATION);
     const expressionScorer = await getAgentById(SCORER_IDS.EXPRESSION);
+    console.log(`[ScoringEngine] Scorer agents found:`, {
+      logic: !!logicScorer,
+      innovation: !!innovationScorer,
+      expression: !!expressionScorer
+    });
 
     if (!logicScorer || !innovationScorer || !expressionScorer) {
-      console.warn("[ScoringEngine] Scorer agents not found, returning default scores");
+      console.error("[ScoringEngine] Scorer agents not found, returning default scores");
       return {
         logicScore: 5,
         innovationScore: 5,
@@ -53,6 +60,7 @@ export async function scoreMessage(
     const contextText = buildScoringContext(message, context);
 
     // Score in parallel
+    console.log(`[ScoringEngine] Starting parallel scoring...`);
     const [logicResult, innovationResult, expressionResult] = await Promise.all([
       scoreWithAgent(logicScorer, contextText, userId),
       scoreWithAgent(innovationScorer, contextText, userId),
@@ -60,6 +68,12 @@ export async function scoreMessage(
     ]);
 
     const totalScore = logicResult.score + innovationResult.score + expressionResult.score;
+    console.log(`[ScoringEngine] Scoring completed for message ${message.id}:`, {
+      logic: logicResult.score,
+      innovation: innovationResult.score,
+      expression: expressionResult.score,
+      total: totalScore
+    });
 
     return {
       logicScore: logicResult.score,

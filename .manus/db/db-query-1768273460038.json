@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, sender, round, logicScore, innovationScore, expressionScore, totalScore, LEFT(content, 50) as content_preview FROM messages ORDER BY createdAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2EWZNYNSuTKGjiZ.root --database DmM4Thn8jeAVUsEhuTH7VK --execute SELECT id, sender, round, logicScore, innovationScore, expressionScore, totalScore, LEFT(content, 50) as content_preview FROM messages ORDER BY createdAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "9xiyVW3_zGadGxpRWU2np",
+      "sender": "innovator",
+      "round": "5",
+      "logicScore": "7",
+      "innovationScore": "8",
+      "expressionScore": "8",
+      "totalScore": "23",
+      "content_preview": "批判者依然执着于“优化已知”与“发现全新”的界限，这恰恰是传统思维的局限。我的核心论点是，测试的价值"
+    },
+    {
+      "id": "F5ETyYwsXeLP03BWrnJcB",
+      "sender": "critic",
+      "round": "5",
+      "logicScore": "8",
+      "innovationScore": "4",
+      "expressionScore": "9",
+      "totalScore": "21",
+      "content_preview": "创新者提出的混沌工程、游戏化测试和逆向测试，确实提供了更具体的“非线性价值发现”和“创新投资”的实践"
+    },
+    {
+      "id": "i7bX3qHHTBiZB14foDMaf",
+      "sender": "innovator",
+      "round": "4",
+      "logicScore": "7",
+      "innovationScore": "8",
+      "expressionScore": "8",
+      "totalScore": "23",
+      "content_preview": "批判者再次要求具体方法论和案例，这恰恰证明了传统思维对“可量化”和“已知”的执着。我的观点是，测试的"
+    },
+    {
+      "id": "JR4FLWpeSK2TWm0pe7S_g",
+      "sender": "critic",
+      "round": "4",
+      "logicScore": "8",
+      "innovationScore": "6",
+      "expressionScore": "8",
+      "totalScore": "22",
+      "content_preview": "创新者终于开始提供具体的实践例子，如A/B测试、用户行为分析和将失败视为线索，这使得其“探索性反馈回"
+    },
+    {
+      "id": "oM26ke6RXKLP780UC0oqS",
+      "sender": "innovator",
+      "round": "3",
+      "logicScore": "8",
+      "innovationScore": "8",
+      "expressionScore": "9",
+      "totalScore": "25",
+      "content_preview": "批判者对“语境和目的”的强调固然重要，但它将测试框定在“已知”的边界内。我的核心论点是，测试不应被视"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsender\tround\tlogicScore\tinnovationScore\texpressionScore\ttotalScore\tcontent_preview\n9xiyVW3_zGadGxpRWU2np\tinnovator\t5\t7\t8\t8\t23\t批判者依然执着于“优化已知”与“发现全新”的界限，这恰恰是传统思维的局限。我的核心论点是，测试的价值\nF5ETyYwsXeLP03BWrnJcB\tcritic\t5\t8\t4\t9\t21\t创新者提出的混沌工程、游戏化测试和逆向测试，确实提供了更具体的“非线性价值发现”和“创新投资”的实践\ni7bX3qHHTBiZB14foDMaf\tinnovator\t4\t7\t8\t8\t23\t批判者再次要求具体方法论和案例，这恰恰证明了传统思维对“可量化”和“已知”的执着。我的观点是，测试的\nJR4FLWpeSK2TWm0pe7S_g\tcritic\t4\t8\t6\t8\t22\t创新者终于开始提供具体的实践例子，如A/B测试、用户行为分析和将失败视为线索，这使得其“探索性反馈回\noM26ke6RXKLP780UC0oqS\tinnovator\t3\t8\t8\t9\t25\t批判者对“语境和目的”的强调固然重要，但它将测试框定在“已知”的边界内。我的核心论点是，测试不应被视\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

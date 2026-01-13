@@ -1,6 +1,6 @@
 import { Server as HTTPServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
-import { getAllAgents, getDebateSessionById } from "./db";
+import { getAllAgents, getDebateSessionById, getSessionMessages } from "./db";
 import { runDebateSession, AgentStatus } from "./debateEngine";
 import { Message } from "../drizzle/schema";
 
@@ -16,9 +16,18 @@ export function setupWebSocket(httpServer: HTTPServer) {
   io.on("connection", (socket) => {
     console.log(`[WebSocket] Client connected: ${socket.id}`);
 
-    socket.on("join-debate", (sessionId: string) => {
+    socket.on("join-debate", async (sessionId: string) => {
       socket.join(`debate-${sessionId}`);
       console.log(`[WebSocket] Client ${socket.id} joined debate ${sessionId}`);
+      
+      // Send historical messages to the client
+      try {
+        const messages = await getSessionMessages(sessionId);
+        socket.emit("historical-messages", messages);
+        console.log(`[WebSocket] Sent ${messages.length} historical messages to client ${socket.id}`);
+      } catch (error) {
+        console.error(`[WebSocket] Error loading historical messages:`, error);
+      }
     });
 
     socket.on("start-debate", async (sessionId: string) => {

@@ -91,8 +91,10 @@ export async function executeDebateRound(
   onAgentStatusChange?: (agentId: string, status: AgentStatus) => void,
   onMessageCreated?: (message: Message) => void
 ): Promise<Message[]> {
+  console.log(`[DebateEngine] ===== executeDebateRound called for round ${context.currentRound} =====`);
   const roundMessages: Message[] = [];
   const previousMessages = await getSessionMessages(sessionId);
+  console.log(`[DebateEngine] Previous messages count: ${previousMessages.length}`);
 
   for (const agent of context.agents) {
     try {
@@ -128,11 +130,13 @@ export async function executeDebateRound(
       onMessageCreated?.(message);
 
       // Score the message asynchronously (don't block the debate flow)
+      console.log(`[DebateEngine] Starting to score message ${message.id}`);
       scoreMessage(
         message,
         { topic: context.topic, previousMessages },
         userId
       ).then(async (scores) => {
+        console.log(`[DebateEngine] Received scores for message ${message.id}:`, scores);
         // Update message with scores
         await updateMessage(message.id, {
           logicScore: scores.logicScore,
@@ -141,8 +145,10 @@ export async function executeDebateRound(
           totalScore: scores.totalScore,
           scoringReasons: scores.scoringReasons,
         });
+        console.log(`[DebateEngine] Successfully updated message ${message.id} with scores`);
       }).catch((error) => {
         console.error(`[DebateEngine] Error scoring message ${message.id}:`, error);
+        console.error(`[DebateEngine] Error stack:`, error.stack);
       });
 
       // Update agent status to waiting
@@ -304,6 +310,9 @@ export async function runDebateSession(
       keyPoints: summary.keyPoints,
       consensus: summary.consensus,
       disagreements: summary.disagreements,
+      bestViewpoint: summary.bestViewpoint || null,
+      mostInnovative: summary.mostInnovative || null,
+      goldenQuotes: summary.goldenQuotes || [],
       completedAt: new Date(),
     });
 

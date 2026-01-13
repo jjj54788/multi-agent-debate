@@ -269,6 +269,47 @@ export default function DebateRoom() {
                               <div className="prose prose-sm max-w-none dark:prose-invert">
                                 <Streamdown>{message.content}</Streamdown>
                               </div>
+                              {/* Display scores if available */}
+                              {message.totalScore != null && message.totalScore > 0 && (
+                                <div className="mt-3 p-3 bg-muted/50 rounded-lg space-y-2">
+                                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                                    <span>📊 评分</span>
+                                    <Badge variant="secondary" className="text-xs">
+                                      总分: {(message.totalScore ?? 0).toFixed(1)}/30
+                                    </Badge>
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-2 text-xs">
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-muted-foreground">逻辑:</span>
+                                      <span className="font-semibold text-indigo-600">{message.logicScore?.toFixed(1) || 0}/10</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-muted-foreground">创新:</span>
+                                      <span className="font-semibold text-pink-600">{message.innovationScore?.toFixed(1) || 0}/10</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-muted-foreground">表达:</span>
+                                      <span className="font-semibold text-teal-600">{message.expressionScore?.toFixed(1) || 0}/10</span>
+                                    </div>
+                                  </div>
+                                  {message.scoringReasons && (
+                                    <details className="text-xs">
+                                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">查看评分理由</summary>
+                                      <div className="mt-2 space-y-1 pl-2 border-l-2 border-muted">
+                                        {typeof message.scoringReasons === 'string' ? (
+                                          <p className="text-muted-foreground">{message.scoringReasons}</p>
+                                        ) : (
+                                          <>
+                                            <p><span className="font-semibold text-indigo-600">逻辑:</span> {message.scoringReasons.logic}</p>
+                                            <p><span className="font-semibold text-pink-600">创新:</span> {message.scoringReasons.innovation}</p>
+                                            <p><span className="font-semibold text-teal-600">表达:</span> {message.scoringReasons.expression}</p>
+                                          </>
+                                        )}
+                                      </div>
+                                    </details>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                           {index < messages.length - 1 && <Separator className="my-6" />}
@@ -301,7 +342,7 @@ export default function DebateRoom() {
         )}
 
         {/* Highlights Section - Show after completion */}
-        {isCompleted && completedSession?.summary && (
+        {isCompleted && completedSession && (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -313,40 +354,40 @@ export default function DebateRoom() {
             <CardContent>
               <div className="grid md:grid-cols-3 gap-6">
                 {/* Best Viewpoint */}
-                {(completedSession.summary as any).bestViewpoint && (
+                {completedSession.bestViewpoint && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400">
                       <TrendingUp className="h-4 w-4" />
                       最佳观点
                     </div>
                     <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <p className="text-sm">{(completedSession.summary as any).bestViewpoint}</p>
+                      <p className="text-sm">{completedSession.bestViewpoint}</p>
                     </div>
                   </div>
                 )}
 
                 {/* Most Innovative */}
-                {(completedSession.summary as any).mostInnovative && (
+                {completedSession.mostInnovative && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm font-semibold text-purple-600 dark:text-purple-400">
                       <Sparkles className="h-4 w-4" />
                       最创新观点
                     </div>
                     <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <p className="text-sm">{(completedSession.summary as any).mostInnovative}</p>
+                      <p className="text-sm">{completedSession.mostInnovative}</p>
                     </div>
                   </div>
                 )}
 
                 {/* Golden Quote */}
-                {(completedSession.summary as any).goldenQuotes && (completedSession.summary as any).goldenQuotes.length > 0 && (
+                {completedSession.goldenQuotes && completedSession.goldenQuotes.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
                       <Quote className="h-4 w-4" />
                       精彩金句
                     </div>
                     <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                      <p className="text-sm italic">"{(completedSession.summary as any).goldenQuotes[0]}"</p>
+                      <p className="text-sm italic">"{completedSession.goldenQuotes[0]}"</p>
                     </div>
                   </div>
                 )}
@@ -356,26 +397,28 @@ export default function DebateRoom() {
               <Separator className="my-6" />
               <div className="space-y-4">
                 <h4 className="font-semibold">完整总结</h4>
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <Streamdown>{completedSession.summary.summary}</Streamdown>
-                </div>
+                {completedSession.summary && (
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <Streamdown>{completedSession.summary}</Streamdown>
+                  </div>
+                )}
 
-                {completedSession.summary.keyPoints && completedSession.summary.keyPoints.length > 1 && (
+                {completedSession.keyPoints && completedSession.keyPoints.length > 0 && (
                   <>
                     <h4 className="font-semibold mt-6">关键观点</h4>
                     <ul className="list-disc list-inside space-y-2 text-sm">
-                      {completedSession.summary.keyPoints.map((point, index) => (
+                      {completedSession.keyPoints.map((point, index) => (
                         <li key={index}>{point}</li>
                       ))}
                     </ul>
                   </>
                 )}
 
-                {completedSession.summary.disagreements && completedSession.summary.disagreements.length > 1 && (
+                {completedSession.disagreements && completedSession.disagreements.length > 0 && (
                   <>
                     <h4 className="font-semibold mt-6">分歧点</h4>
                     <ul className="list-disc list-inside space-y-2 text-sm">
-                      {completedSession.summary.disagreements.map((point, index) => (
+                      {completedSession.disagreements.map((point, index) => (
                         <li key={index}>{point}</li>
                       ))}
                     </ul>

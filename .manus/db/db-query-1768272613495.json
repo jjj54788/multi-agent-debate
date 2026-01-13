@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, name, profile FROM agents WHERE id IN ('logic_scorer', 'innovation_scorer', 'expression_scorer');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2EWZNYNSuTKGjiZ.root --database DmM4Thn8jeAVUsEhuTH7VK --execute SELECT id, name, profile FROM agents WHERE id IN ('logic_scorer', 'innovation_scorer', 'expression_scorer');",
+  "rows": [
+    {
+      "id": "logic_scorer",
+      "name": "逻辑评分者",
+      "profile": "逻辑严密性评判员"
+    },
+    {
+      "id": "innovation_scorer",
+      "name": "创新评分者",
+      "profile": "创意价值评判员"
+    },
+    {
+      "id": "expression_scorer",
+      "name": "表达评分者",
+      "profile": "沟通效果评判员"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tprofile\nlogic_scorer\t逻辑评分者\t逻辑严密性评判员\ninnovation_scorer\t创新评分者\t创意价值评判员\nexpression_scorer\t表达评分者\t沟通效果评判员\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import {
   ReactFlow,
   Background,
@@ -7,6 +7,8 @@ import {
   useNodesState,
   useEdgesState,
   MarkerType,
+  Edge,
+  Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { AgentNode } from "./AgentNode";
@@ -34,88 +36,17 @@ export function DebateFlowChart({ agents, agentStatuses, messages, currentRound 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  // Calculate vertical cascade layout positions (传导视角)
-  const calculateNodePositions = useCallback(
-    (agentList: Agent[]) => {
-      const horizontalSpacing = 200;
-      const verticalSpacing = 150;
-      const startX = 100;
-      const startY = 50;
+  // Build flow chart with clear message flow visualization
+  useEffect(() => {
+    if (agents.length === 0) return;
 
-      // Group messages by round
-      const messagesByRound: Record<number, Message[]> = {};
-      messages.forEach((msg) => {
-        if (!messagesByRound[msg.round]) {
-          messagesByRound[msg.round] = [];
-        }
-        messagesByRound[msg.round].push(msg);
-      });
+    const newNodes: Node<any>[] = [];
+    const newEdges: Edge<any>[] = [];
 
-      const positionedNodes: Array<{
-        id: string;
-        type: string;
-        position: { x: number; y: number };
-        data: any;
-        style?: any;
-        className?: string;
-      }> = [];
-
-      // Create nodes for each round
-      for (let round = 1; round <= currentRound; round++) {
-        const roundMessages = messagesByRound[round] || [];
-        
-        roundMessages.forEach((msg, msgIndex) => {
-          const agent = agentList.find((a) => a.id === msg.sender);
-          if (!agent) return;
-
-          const status = agentStatuses[agent.id] || "idle";
-          const isActive = status === "thinking" || status === "speaking";
-          const isCurrent = round === currentRound;
-
-          // Position: horizontal spread within round, vertical cascade by round
-          const x = startX + msgIndex * horizontalSpacing;
-          const y = startY + (round - 1) * verticalSpacing;
-
-          positionedNodes.push({
-            id: `${agent.id}-r${round}`,
-            type: "agentNode",
-            position: { x, y },
-            data: {
-              name: agent.name,
-              profile: agent.profile,
-              color: agent.color,
-              status: isCurrent ? status : "idle",
-              round: round,
-              score: msg.totalScore || undefined,
-            },
-            style: {
-              boxShadow: isActive && isCurrent ? `0 0 20px ${agent.color}` : undefined,
-              transform: isActive && isCurrent ? "scale(1.1)" : "scale(1)",
-              transition: "all 0.3s ease",
-              zIndex: isActive && isCurrent ? 10 : 1,
-              opacity: isCurrent ? 1 : 0.7,
-            },
-            className: isActive && isCurrent ? "animate-pulse" : "",
-          });
-        });
-      }
-
-      return positionedNodes;
-    },
-    [agentStatuses, messages, currentRound]
-  );
-
-  // Calculate edges (传导路径)
-  const calculateEdges = useCallback(() => {
-    const newEdges: Array<{
-      id: string;
-      source: string;
-      target: string;
-      type: string;
-      animated: boolean;
-      style: any;
-      markerEnd: any;
-    }> = [];
+    const horizontalSpacing = 300;
+    const verticalSpacing = 200;
+    const startX = 150;
+    const startY = 100;
 
     // Group messages by round
     const messagesByRound: Record<number, Message[]> = {};
@@ -126,54 +57,139 @@ export function DebateFlowChart({ agents, agentStatuses, messages, currentRound 
       messagesByRound[msg.round].push(msg);
     });
 
-    // Create edges between rounds (传导连接)
-    for (let round = 1; round < currentRound; round++) {
-      const currentRoundMessages = messagesByRound[round] || [];
-      const nextRoundMessages = messagesByRound[round + 1] || [];
+    // Create nodes for each message in each round
+    let nodeId = 0;
+    for (let round = 1; round <= Math.max(currentRound, 1); round++) {
+      const roundMessages = messagesByRound[round] || [];
+      
+      if (roundMessages.length === 0 && round === currentRound) {
+        // Show agents waiting for first message in current round
+        agents.forEach((agent, agentIndex) => {
+          const status = agentStatuses[agent.id] || "idle";
+          const x = startX + agentIndex * horizontalSpacing;
+          const y = startY + (round - 1) * verticalSpacing;
 
-      currentRoundMessages.forEach((currentMsg) => {
-        nextRoundMessages.forEach((nextMsg) => {
-          newEdges.push({
-            id: `e-${currentMsg.sender}-r${round}-${nextMsg.sender}-r${round + 1}`,
-            source: `${currentMsg.sender}-r${round}`,
-            target: `${nextMsg.sender}-r${round + 1}`,
-            type: "smoothstep",
-            animated: round === currentRound - 1,
-            style: {
-              stroke: "#94a3b8",
-              strokeWidth: round === currentRound - 1 ? 2 : 1,
-              opacity: round === currentRound - 1 ? 1 : 0.4,
+          newNodes.push({
+            id: `agent-${agent.id}-r${round}`,
+            type: "agentNode",
+            position: { x, y },
+            data: {
+              name: agent.name,
+              profile: agent.profile,
+              color: agent.color,
+              status: status,
+              round: round,
             },
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              color: "#94a3b8",
+            style: {
+              boxShadow: status !== "idle" ? `0 0 20px ${agent.color}` : undefined,
+              transform: status !== "idle" ? "scale(1.05)" : "scale(1)",
+              transition: "all 0.3s ease",
             },
           });
         });
+        continue;
+      }
+
+      // Create nodes for each message
+      roundMessages.forEach((msg, msgIndex) => {
+        const agent = agents.find((a) => a.id === msg.sender);
+        if (!agent) return;
+
+        const status = agentStatuses[agent.id] || "idle";
+        const isCurrent = round === currentRound;
+        const isActive = isCurrent && (status === "thinking" || status === "speaking");
+
+        // Calculate position: spread horizontally, cascade vertically by round
+        const x = startX + msgIndex * horizontalSpacing;
+        const y = startY + (round - 1) * verticalSpacing;
+
+        const currentNodeId = `msg-${nodeId}`;
+        nodeId++;
+
+        newNodes.push({
+          id: currentNodeId,
+          type: "agentNode",
+          position: { x, y },
+          data: {
+            name: agent.name,
+            profile: agent.profile,
+            color: agent.color,
+            status: isCurrent ? status : "idle",
+            round: round,
+            score: msg.totalScore || undefined,
+            message: msg.content.substring(0, 50) + "...",
+          },
+          style: {
+            boxShadow: isActive ? `0 0 20px ${agent.color}` : undefined,
+            transform: isActive ? "scale(1.05)" : "scale(1)",
+            transition: "all 0.3s ease",
+            opacity: isCurrent ? 1 : 0.75,
+          },
+          className: isActive ? "animate-pulse" : "",
+        });
+
+        // Create edge from previous round's last message to this message
+        if (round > 1 && msgIndex === 0) {
+          const prevRoundMessages = messagesByRound[round - 1] || [];
+          if (prevRoundMessages.length > 0) {
+            const prevNodeId = `msg-${nodeId - roundMessages.length - prevRoundMessages.length + prevRoundMessages.length - 1}`;
+            newEdges.push({
+              id: `edge-${prevNodeId}-${currentNodeId}`,
+              source: prevNodeId,
+              target: currentNodeId,
+              type: "smoothstep",
+              animated: isCurrent,
+              style: {
+                stroke: agent.color,
+                strokeWidth: isCurrent ? 3 : 2,
+              },
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: agent.color,
+              },
+              label: `轮次 ${round}`,
+              labelStyle: {
+                fontSize: 12,
+                fontWeight: "bold",
+                fill: agent.color,
+              },
+              labelBgStyle: {
+                fill: "white",
+                fillOpacity: 0.8,
+              },
+            });
+          }
+        }
+
+        // Create edge between messages in the same round
+        if (msgIndex > 0) {
+          const prevNodeId = `msg-${nodeId - 2}`;
+          newEdges.push({
+            id: `edge-${prevNodeId}-${currentNodeId}`,
+            source: prevNodeId,
+            target: currentNodeId,
+            type: "smoothstep",
+            animated: isCurrent,
+            style: {
+              stroke: agent.color,
+              strokeWidth: isCurrent ? 2 : 1,
+              strokeDasharray: "5,5",
+            },
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: agent.color,
+            },
+          });
+        }
       });
     }
 
-    return newEdges;
-  }, [messages, currentRound]);
-
-  // Initialize and update nodes
-  useEffect(() => {
-    if (agents.length > 0 && messages.length > 0) {
-      const positionedNodes = calculateNodePositions(agents);
-      setNodes(positionedNodes as any);
-    }
-  }, [agents, messages, currentRound, agentStatuses, calculateNodePositions, setNodes]);
-
-  // Update edges
-  useEffect(() => {
-    if (messages.length > 0) {
-      const newEdges = calculateEdges();
-      setEdges(newEdges as any);
-    }
-  }, [messages, currentRound, calculateEdges, setEdges]);
+    setNodes(newNodes as any);
+    setEdges(newEdges as any);
+  }, [agents, agentStatuses, messages, currentRound, setNodes, setEdges]);
 
   return (
-    <div className="w-full h-full">
+    <div className="h-full w-full">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -181,17 +197,18 @@ export function DebateFlowChart({ agents, agentStatuses, messages, currentRound 
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
-        minZoom={0.2}
+        minZoom={0.5}
         maxZoom={1.5}
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
       >
         <Background />
         <Controls />
         <MiniMap
-          nodeColor={(node: any) => {
-            const agent = agents.find((a) => node.id.startsWith(a.id));
-            return agent?.color || "#999";
+          nodeColor={(node) => {
+            const agent = agents.find((a) => node.data.name === a.name);
+            return agent?.color || "#94a3b8";
           }}
+          maskColor="rgba(0, 0, 0, 0.1)"
         />
       </ReactFlow>
     </div>
