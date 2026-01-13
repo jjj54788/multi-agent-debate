@@ -51,23 +51,40 @@ export function useDebateSocket(sessionId: string | null) {
   useEffect(() => {
     if (!sessionId) return;
 
+    console.log("[useDebateSocket] Initializing WebSocket connection for session:", sessionId);
+
     // Create socket connection
-    const newSocket = io({
+    const newSocket = io(window.location.origin, {
       path: "/api/socket.io",
       transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
     });
+
+    console.log("[useDebateSocket] Socket instance created", newSocket);
 
     socketRef.current = newSocket;
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
-      console.log("[WebSocket] Connected");
+      console.log("[WebSocket] Connected successfully!", {
+        id: newSocket.id,
+        connected: newSocket.connected,
+        sessionId
+      });
       setConnected(true);
       newSocket.emit("join-debate", sessionId);
     });
 
-    newSocket.on("disconnect", () => {
-      console.log("[WebSocket] Disconnected");
+    newSocket.on("connect_error", (error) => {
+      console.error("[WebSocket] Connection error:", error);
+      setConnected(false);
+      setError("无法连接到服务器，请刷新页面重试");
+    });
+
+    newSocket.on("disconnect", (reason) => {
+      console.log("[WebSocket] Disconnected:", reason);
       setConnected(false);
     });
 
