@@ -1,0 +1,8 @@
+{
+  "query": "SELECT * FROM ai_providers WHERE userId = (SELECT id FROM users LIMIT 1) AND isActive = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2EWZNYNSuTKGjiZ.root --database DmM4Thn8jeAVUsEhuTH7VK --execute SELECT * FROM ai_providers WHERE userId = (SELECT id FROM users LIMIT 1) AND isActive = 1;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'dmm4thn8jeavusehuth7vk.ai_providers' doesn't exist"
+  ]
+}

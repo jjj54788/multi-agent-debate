@@ -39,21 +39,41 @@ export async function generateAgentResponse(
     })
     .join("\n\n");
 
-  const prompt = `## BACKGROUND
+  // Analyze recent messages to provide context
+  const recentMessages = previousMessages.slice(-3); // Last 3 messages for immediate context
+  const recentContext = recentMessages.length > 0
+    ? recentMessages.map((msg) => {
+        const msgAgent = context.agents.find((a) => a.id === msg.sender);
+        return `${msgAgent?.name || msg.sender}: ${msg.content}`;
+      }).join("\n\n")
+    : "";
+
+  const prompt = `## YOUR ROLE
 You are ${agent.name}, ${agent.profile}.
 ${agent.systemPrompt}
 
 ## DEBATE TOPIC
 ${context.topic}
 
-## DEBATE HISTORY
+## FULL DEBATE HISTORY
 ${history || "This is the beginning of the debate."}
 
-## YOUR TURN
+${recentContext ? `## RECENT DISCUSSION (Pay Special Attention)
+${recentContext}
+
+` : ""}## YOUR TASK
 Round ${context.currentRound} of ${context.maxRounds}.
 ${previousMessages.length === 0 
-  ? "As the first speaker, provide your initial perspective on this topic in 100-150 words."
-  : "Respond to the previous arguments, state your position, and provide your analysis in 100-150 words."}`;
+  ? "As the first speaker, provide your initial perspective on this topic. Be clear, insightful, and set a strong foundation for the debate. (100-150 words)"
+  : `You have heard all the previous arguments. Now it's your turn to respond.
+
+**Your response should:**
+1. Acknowledge or reference specific points made by other participants
+2. Present your own perspective with clear reasoning
+3. Add new insights or angles that haven't been fully explored
+4. Build on or challenge previous arguments constructively
+
+Be concise but impactful. (100-150 words)`}`;
 
   try {
     // Get user's active AI provider config
@@ -82,7 +102,8 @@ ${previousMessages.length === 0
 }
 
 /**
- * Execute one round of debate with all agents speaking in sequence
+ * Execute one round of debate with parallel thinking and sequential speaking
+ * All agents think simultaneously, then speak in sequence
  */
 export async function executeDebateRound(
   sessionId: string,
@@ -93,17 +114,44 @@ export async function executeDebateRound(
 ): Promise<Message[]> {
   console.log(`[DebateEngine] ===== executeDebateRound called for round ${context.currentRound} =====`);
   const roundMessages: Message[] = [];
-  const previousMessages = await getSessionMessages(sessionId);
+  let previousMessages = await getSessionMessages(sessionId);
   console.log(`[DebateEngine] Previous messages count: ${previousMessages.length}`);
 
+  // Phase 1: Parallel Thinking - All agents generate responses simultaneously
+  console.log(`[DebateEngine] Phase 1: All agents start thinking in parallel`);
+  
+  // Set all agents to "thinking" status
   for (const agent of context.agents) {
+    onAgentStatusChange?.(agent.id, "thinking");
+  }
+
+  // Generate all responses in parallel
+  const responsePromises = context.agents.map(async (agent) => {
     try {
-      // Update agent status to thinking
-      onAgentStatusChange?.(agent.id, "thinking");
-
-      // Generate response
       const content = await generateAgentResponse(agent, context, previousMessages, userId);
+      return { agent, content, success: true };
+    } catch (error) {
+      console.error(`[DebateEngine] Error generating response for ${agent.name}:`, error);
+      return { agent, content: "", success: false, error };
+    }
+  });
 
+  const responses = await Promise.all(responsePromises);
+  console.log(`[DebateEngine] All agents finished thinking, ${responses.filter(r => r.success).length}/${responses.length} succeeded`);
+
+  // Phase 2: Sequential Speaking - Agents speak one by one
+  console.log(`[DebateEngine] Phase 2: Agents speak in sequence`);
+  
+  for (let i = 0; i < context.agents.length; i++) {
+    const { agent, content, success } = responses[i];
+    
+    if (!success) {
+      console.error(`[DebateEngine] Skipping agent ${agent.name} due to earlier error`);
+      onAgentStatusChange?.(agent.id, "idle");
+      continue;
+    }
+
+    try {
       // Update agent status to speaking
       onAgentStatusChange?.(agent.id, "speaking");
 
@@ -129,11 +177,14 @@ export async function executeDebateRound(
       roundMessages.push(message);
       onMessageCreated?.(message);
 
+      // Update previousMessages so subsequent agents in this round can see it
+      previousMessages = [...previousMessages, message];
+
       // Score the message asynchronously (don't block the debate flow)
       console.log(`[DebateEngine] Starting to score message ${message.id}`);
       scoreMessage(
         message,
-        { topic: context.topic, previousMessages },
+        { topic: context.topic, previousMessages: previousMessages.slice(0, -1) }, // Don't include current message in scoring context
         userId
       ).then(async (scores) => {
         console.log(`[DebateEngine] Received scores for message ${message.id}:`, scores);
