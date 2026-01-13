@@ -19,6 +19,13 @@ export interface AgentStatusUpdate {
   status: AgentStatus;
 }
 
+export interface DebateSummary {
+  summary: string;
+  keyPoints: string[];
+  consensus: string;
+  disagreements: string[];
+}
+
 export interface DebateSession {
   id: string;
   userId: number;
@@ -27,10 +34,7 @@ export interface DebateSession {
   maxRounds: number;
   currentRound: number;
   status: "pending" | "running" | "paused" | "completed" | "error";
-  summary: string | null;
-  keyPoints: string[] | null;
-  consensus: string[] | null;
-  disagreements: string[] | null;
+  summary: DebateSummary | null;
   createdAt: Date;
   updatedAt: Date;
   completedAt: Date | null;

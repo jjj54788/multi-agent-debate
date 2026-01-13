@@ -49,7 +49,7 @@ export const debateSessions = mysqlTable("debate_sessions", {
   status: mysqlEnum("status", ["pending", "running", "paused", "completed", "error"]).notNull().default("pending"),
   summary: text("summary"),
   keyPoints: json("keyPoints").$type<string[]>(),
-  consensus: json("consensus").$type<string[]>(),
+  consensus: text("consensus"),
   disagreements: json("disagreements").$type<string[]>(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

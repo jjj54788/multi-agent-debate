@@ -1,0 +1,1 @@
+ALTER TABLE `debate_sessions` MODIFY COLUMN `consensus` text;

@@ -23,13 +23,14 @@ interface DebateFlowChartProps {
   agents: Agent[];
   agentStatuses: Record<string, AgentStatus>;
   messages: Message[];
+  currentRound?: number;
 }
 
 const nodeTypes = {
   agentNode: AgentNode,
 };
 
-export function DebateFlowChart({ agents, agentStatuses, messages }: DebateFlowChartProps) {
+export function DebateFlowChart({ agents, agentStatuses, messages, currentRound = 0 }: DebateFlowChartProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -45,6 +46,9 @@ export function DebateFlowChart({ agents, agentStatuses, messages }: DebateFlowC
         const angle = index * angleStep - Math.PI / 2; // Start from top
         const x = centerX + radius * Math.cos(angle);
         const y = centerY + radius * Math.sin(angle);
+        
+        const status = agentStatuses[agent.id] || "idle";
+        const isActive = status === "thinking" || status === "speaking";
 
         return {
           id: agent.id,
@@ -54,8 +58,16 @@ export function DebateFlowChart({ agents, agentStatuses, messages }: DebateFlowC
             name: agent.name,
             profile: agent.profile,
             color: agent.color,
-            status: (agentStatuses[agent.id] || "idle") as AgentStatus,
+            status: status as AgentStatus,
           },
+          // Add visual emphasis for active agents
+          style: {
+            boxShadow: isActive ? `0 0 20px ${agent.color}` : undefined,
+            transform: isActive ? 'scale(1.1)' : 'scale(1)',
+            transition: 'all 0.3s ease',
+            zIndex: isActive ? 10 : 1,
+          },
+          className: isActive ? 'animate-pulse' : '',
         };
       });
     },
@@ -70,61 +82,92 @@ export function DebateFlowChart({ agents, agentStatuses, messages }: DebateFlowC
     }
   }, [agents, calculateNodePositions, setNodes]);
 
-  // Update node statuses
+  // Update node statuses with enhanced visual feedback
   useEffect(() => {
     setNodes((nds: any) =>
-      nds.map((node: any) => ({
-        ...node,
-        data: {
-          ...node.data,
-          status: agentStatuses[node.id] || "idle",
-        },
-      }))
+      nds.map((node: any) => {
+        const status = agentStatuses[node.id] || "idle";
+        const isActive = status === "thinking" || status === "speaking";
+        const agent = agents.find(a => a.id === node.id);
+        
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            status: status,
+          },
+          style: {
+            boxShadow: isActive ? `0 0 20px ${agent?.color || '#999'}` : undefined,
+            transform: isActive ? 'scale(1.1)' : 'scale(1)',
+            transition: 'all 0.3s ease',
+            zIndex: isActive ? 10 : 1,
+          },
+          className: isActive ? 'animate-pulse' : '',
+        };
+      })
     );
-  }, [agentStatuses, setNodes]);
+  }, [agentStatuses, agents, setNodes]);
 
-  // Create edges from messages
+  // Create edges from messages with enhanced animations
   useEffect(() => {
     if (messages.length === 0) {
       setEdges([]);
       return;
     }
 
-    const newEdges = messages.map((message, index) => ({
-      id: `edge-${message.id}`,
-      source: message.sender,
-      target: message.receiver,
-      type: "smoothstep",
-      animated: index === messages.length - 1, // Animate only the latest edge
-      style: {
-        stroke: agents.find((a) => a.id === message.sender)?.color || "#999",
-        strokeWidth: 2,
-      },
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        color: agents.find((a) => a.id === message.sender)?.color || "#999",
-      },
-      label: `轮 ${message.round}`,
-      labelStyle: {
-        fill: "#666",
-        fontSize: 12,
-      },
-      labelBgStyle: {
-        fill: "#fff",
-        fillOpacity: 0.8,
-      },
-    }));
+    // Group messages by round
+    const messagesByRound = messages.reduce((acc, msg) => {
+      if (!acc[msg.round]) acc[msg.round] = [];
+      acc[msg.round].push(msg);
+      return acc;
+    }, {} as Record<number, Message[]>);
+
+    const newEdges = messages.map((message, index) => {
+      const isLatest = index === messages.length - 1;
+      const isCurrentRound = message.round === currentRound;
+      const agent = agents.find((a) => a.id === message.sender);
+      const color = agent?.color || "#999";
+      
+      return {
+        id: `edge-${message.id}`,
+        source: message.sender,
+        target: message.receiver,
+        type: "smoothstep",
+        animated: isLatest || isCurrentRound, // Animate latest and current round edges
+        style: {
+          stroke: color,
+          strokeWidth: isCurrentRound ? 3 : 2,
+          opacity: isCurrentRound ? 1 : 0.5,
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: color,
+        },
+        label: `第 ${message.round} 轮`,
+        labelStyle: {
+          fill: isCurrentRound ? color : "#666",
+          fontSize: isCurrentRound ? 14 : 12,
+          fontWeight: isCurrentRound ? 'bold' : 'normal',
+        },
+        labelBgStyle: {
+          fill: "#fff",
+          fillOpacity: 0.9,
+        },
+      };
+    });
 
     setEdges(newEdges as any);
-  }, [messages, agents, setEdges]);
+  }, [messages, agents, currentRound, setEdges]);
 
   // Custom minimap node colors
   const nodeColor = useCallback(
     (node: any) => {
       const agent = agents.find((a) => a.id === node.id);
-      return agent?.color || "#999";
+      const status = agentStatuses[node.id];
+      const isActive = status === "thinking" || status === "speaking";
+      return isActive ? (agent?.color || "#999") : "#ddd";
     },
-    [agents]
+    [agents, agentStatuses]
   );
 
   return (

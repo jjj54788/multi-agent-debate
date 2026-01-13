@@ -146,7 +146,7 @@ export async function generateDebateSummary(
 ): Promise<{
   summary: string;
   keyPoints: string[];
-  consensus: string[];
+  consensus: string;
   disagreements: string[];
 }> {
   const conversation = messages
@@ -172,7 +172,7 @@ Provide a JSON response with the following structure:
 {
   "summary": "A comprehensive 2-3 paragraph summary of the entire debate",
   "keyPoints": ["Key point 1", "Key point 2", "Key point 3"],
-  "consensus": ["Area of agreement 1", "Area of agreement 2"],
+  "consensus": "Main areas of consensus and agreement",
   "disagreements": ["Point of disagreement 1", "Point of disagreement 2"]
 }`;
 
@@ -203,13 +203,23 @@ Provide a JSON response with the following structure:
       throw new Error("No response from LLM");
     }
 
-    return JSON.parse(content);
+    // Clean up markdown code blocks if present
+    const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    const parsed = JSON.parse(cleanContent);
+    
+    // Ensure consensus is a string (join array if needed)
+    if (Array.isArray(parsed.consensus)) {
+      parsed.consensus = parsed.consensus.join('; ');
+    }
+    
+    return parsed;
   } catch (error) {
     console.error("[DebateEngine] Error generating summary:", error);
     return {
       summary: "Unable to generate summary at this time.",
       keyPoints: [],
-      consensus: [],
+      consensus: "No consensus reached.",
       disagreements: [],
     };
   }
