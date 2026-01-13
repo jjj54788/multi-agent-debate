@@ -171,4 +171,4 @@
 - [x] 测试Docker Compose一键启动（配置已完成，用户可自行测试）
 - [x] 更新DEPLOYMENT.md添加Docker部署说明
 - [x] 更新README.md添加Docker快速开始
-- [ ] 推送更新到GitHub
+- [x] 推送更新到GitHub
